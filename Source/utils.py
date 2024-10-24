@@ -1,8 +1,6 @@
-import sys
-import collections
+from optparse import OptionParser
 import numpy as np
 import heapq
-import time
 
 WALL = "#"
 SPACE = " "
@@ -11,6 +9,22 @@ ARES = "@"
 SWITCH = "."
 STONE_ON_SWITCH = "*"
 ARES_ON_SWITCH = "+"
+
+"""Read command"""
+def readCommand(argv):
+
+    parser = OptionParser()
+    parser.add_option('-l', '--level', dest='sokobanLevels', default='input-01.txt')
+    parser.add_option('-m', '--method', dest='agentMethod', default='bfs')
+    
+    args = dict()
+    options = parser.parse_args(argv)
+    with open('./' + options.sokobanLevels,"r") as f: 
+        layout = f.readlines()
+
+    args['layout'] = layout
+    args['method'] = options.agentMethod
+    return args
 
 class PriorityQueue:
     """Define a PriorityQueue data structure that will be used"""
@@ -29,8 +43,6 @@ class PriorityQueue:
 
     def isEmpty(self):
         return len(self.Heap) == 0
-
-"""Load puzzles and define the rules of sokoban"""
 
 def transferToGameState(layout):
     """Transfer the layout of initial puzzle"""
@@ -135,55 +147,9 @@ def isFailed(posBox):
                 elif newBoard[1] in posBox and newBoard[6] in posBox and newBoard[2] in posWalls and newBoard[3] in posWalls and newBoard[8] in posWalls: return True
     return False
 
-"""Implement all approcahes"""
-
-def breadthFirstSearch():
-    """Implement breadthFirstSearch approach"""
-    beginBox = PosOfBoxes(gameState)
-    beginPlayer = PosOfPlayer(gameState)
-
-    startState = (beginPlayer, beginBox) # e.g. ((2, 2), ((2, 3), (3, 4), (4, 4), (6, 1), (6, 4), (6, 5)))
-    frontier = collections.deque([[startState]]) # store states
-    actions = collections.deque([[0]]) # store actions
-    exploredSet = set()
-    while frontier:
-        node = frontier.popleft()
-        node_action = actions.popleft() 
-        if isEndState(node[-1][-1]):
-            print(','.join(node_action[1:]).replace(',',''))
-            break
-        if node[-1] not in exploredSet:
-            exploredSet.add(node[-1])
-            for action in legalActions(node[-1][0], node[-1][1]):
-                newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action)
-                if isFailed(newPosBox):
-                    continue
-                frontier.append(node + [(newPosPlayer, newPosBox)])
-                actions.append(node_action + [action[-1]])
-
-def depthFirstSearch():
-    """Implement depthFirstSearch approach"""
-    beginBox = PosOfBoxes(gameState)
-    beginPlayer = PosOfPlayer(gameState)
-
-    startState = (beginPlayer, beginBox)
-    frontier = collections.deque([[startState]])
-    exploredSet = set()
-    actions = [[0]] 
-    while frontier:
-        node = frontier.pop()
-        node_action = actions.pop()
-        if isEndState(node[-1][-1]):
-            print(','.join(node_action[1:]).replace(',',''))
-            break
-        if node[-1] not in exploredSet:
-            exploredSet.add(node[-1])
-            for action in legalActions(node[-1][0], node[-1][1]):
-                newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action)
-                if isFailed(newPosBox):
-                    continue
-                frontier.append(node + [(newPosPlayer, newPosBox)])
-                actions.append(node_action + [action[-1]])
+def cost(actions):
+    """A cost function"""
+    return len([x for x in actions if x.islower()])
 
 def heuristic(posPlayer, posBox):
     """A heuristic function to calculate the overall distance between the else boxes and the else goals"""
@@ -194,100 +160,3 @@ def heuristic(posPlayer, posBox):
     for i in range(len(sortposBox)):
         distance += (abs(sortposBox[i][0] - sortposGoals[i][0])) + (abs(sortposBox[i][1] - sortposGoals[i][1]))
     return distance
-
-def cost(actions):
-    """A cost function"""
-    return len([x for x in actions if x.islower()])
-
-def uniformCostSearch():
-    """Implement uniformCostSearch approach"""
-    beginBox = PosOfBoxes(gameState)
-    beginPlayer = PosOfPlayer(gameState)
-
-    startState = (beginPlayer, beginBox)
-    frontier = PriorityQueue()
-    frontier.push([startState], 0)
-    exploredSet = set()
-    actions = PriorityQueue()
-    actions.push([0], 0)
-    while frontier:
-        node = frontier.pop()
-        node_action = actions.pop()
-        if isEndState(node[-1][-1]):
-            print(','.join(node_action[1:]).replace(',',''))
-            break
-        if node[-1] not in exploredSet:
-            exploredSet.add(node[-1])
-            Cost = cost(node_action[1:])
-            for action in legalActions(node[-1][0], node[-1][1]):
-                newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action)
-                if isFailed(newPosBox):
-                    continue
-                frontier.push(node + [(newPosPlayer, newPosBox)], Cost)
-                actions.push(node_action + [action[-1]], Cost)
-
-def aStarSearch():
-    """Implement aStarSearch approach"""
-    beginBox = PosOfBoxes(gameState)
-    beginPlayer = PosOfPlayer(gameState)
-
-    start_state = (beginPlayer, beginBox)
-    frontier = PriorityQueue()
-    frontier.push([start_state], heuristic(beginPlayer, beginBox))
-    exploredSet = set()
-    actions = PriorityQueue()
-    actions.push([0], heuristic(beginPlayer, start_state[1]))
-    while frontier:
-        node = frontier.pop()
-        node_action = actions.pop()
-        if isEndState(node[-1][-1]):
-            print(','.join(node_action[1:]).replace(',',''))
-            break
-        if node[-1] not in exploredSet:
-            exploredSet.add(node[-1])
-            Cost = cost(node_action[1:])
-            for action in legalActions(node[-1][0], node[-1][1]):
-                newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action)
-                if isFailed(newPosBox):
-                    continue
-                Heuristic = heuristic(newPosPlayer, newPosBox)
-                frontier.push(node + [(newPosPlayer, newPosBox)], Heuristic + Cost) 
-                actions.push(node_action + [action[-1]], Heuristic + Cost)
-
-
-"""Read command"""
-def readCommand(argv):
-    from optparse import OptionParser
-    
-    parser = OptionParser()
-    parser.add_option('-l', '--level', dest='sokobanLevels',
-                      help='level of game to play', default='level1.txt')
-    parser.add_option('-m', '--method', dest='agentMethod',
-                      help='research method', default='bfs')
-    args = dict()
-    options, _ = parser.parse_args(argv)
-    with open('./'+options.sokobanLevels,"r") as f: 
-        layout = f.readlines()
-    args['layout'] = layout
-    args['method'] = options.agentMethod
-    return args
-
-
-if __name__ == '__main__':
-    time_start = time.time()
-    layout, method = readCommand(sys.argv[1:]).values()
-    gameState = transferToGameState(layout)
-    posWalls = PosOfWalls(gameState)
-    posGoals = PosOfGoals(gameState)
-    if method == 'astar':
-        aStarSearch()
-    elif method == 'dfs':
-        depthFirstSearch()
-    elif method == 'bfs':
-        breadthFirstSearch()
-    elif method == 'ucs':
-        uniformCostSearch()
-    else:
-        raise ValueError('Invalid method.')
-    time_end=time.time()
-    print('Runtime of %s: %.2f second.' %(method, time_end-time_start))
