@@ -17,8 +17,9 @@ def readCommand(argv):
     parser.add_option('-l', '--level', dest='sokobanLevels', default='input-01.txt')
     parser.add_option('-m', '--method', dest='agentMethod', default='bfs')
     
+    options, _ = parser.parse_args(argv)
     args = dict()
-    options = parser.parse_args(argv)
+
     with open('./' + options.sokobanLevels,"r") as f: 
         layout = f.readlines()
 
@@ -47,7 +48,7 @@ class PriorityQueue:
 def transferToGameState(layout):
     """Transfer the layout of initial puzzle"""
     layout = [x.replace('\n','') for x in layout]
-    layout = [','.join(layout[i]) for i in range(len(layout))]
+    layout = [','.join(x) for x in layout]
     layout = [x.split(',') for x in layout]
     maxColsNum = max([len(x) for x in layout])
     for irow in range(len(layout)):
@@ -55,12 +56,13 @@ def transferToGameState(layout):
             if layout[irow][icol] == SPACE: layout[irow][icol] = 0   # free space
             elif layout[irow][icol] == WALL: layout[irow][icol] = 1 # wall
             elif layout[irow][icol] == ARES: layout[irow][icol] = 2 # player
-            elif layout[irow][icol] == STONE: layout[irow][icol] = 3 # box
-            elif layout[irow][icol] == SWITCH: layout[irow][icol] = 4 # goal
-            elif layout[irow][icol] == STONE_ON_SWITCH: layout[irow][icol] = 5 # box on goal
+            elif layout[irow][icol] == STONE: layout[irow][icol] = 3 # stone
+            elif layout[irow][icol] == SWITCH: layout[irow][icol] = 4 # switch
+            elif layout[irow][icol] == STONE_ON_SWITCH: layout[irow][icol] = 5 # stone on switch
         colsNum = len(layout[irow])
         if colsNum < maxColsNum:
             layout[irow].extend([1 for _ in range(maxColsNum-colsNum)]) 
+            
     return np.array(layout)
 
 def PosOfPlayer(gameState):
@@ -79,11 +81,11 @@ def PosOfGoals(gameState):
     """Return the positions of goals"""
     return tuple(tuple(x) for x in np.argwhere((gameState == 4) | (gameState == 5))) # e.g. like those above
 
-def isEndState(posBox):
+def isEndState(posBox, posGoals):
     """Check if all boxes are on the goals (i.e. pass the game)"""
     return sorted(posBox) == sorted(posGoals)
 
-def isLegalAction(action, posPlayer, posBox):
+def isLegalAction(action, posPlayer, posBox, posWalls):
     """Check if the given action is legal"""
     xPlayer, yPlayer = posPlayer
     if action[-1].isupper(): # the move was a push
@@ -92,7 +94,7 @@ def isLegalAction(action, posPlayer, posBox):
         x1, y1 = xPlayer + action[0], yPlayer + action[1]
     return (x1, y1) not in posBox + posWalls
 
-def legalActions(posPlayer, posBox):
+def legalActions(posPlayer, posBox, posWalls):
     """Return all legal actions for the agent in the current game state"""
     allActions = [[-1,0,'u','U'],[1,0,'d','D'],[0,-1,'l','L'],[0,1,'r','R']]
     xPlayer, yPlayer = posPlayer
@@ -103,7 +105,7 @@ def legalActions(posPlayer, posBox):
             action.pop(2) # drop the little letter
         else:
             action.pop(3) # drop the upper letter
-        if isLegalAction(action, posPlayer, posBox):
+        if isLegalAction(action, posPlayer, posBox, posWalls):
             legalActions.append(action)
         else: 
             continue     
@@ -121,7 +123,7 @@ def updateState(posPlayer, posBox, action):
     newPosPlayer = tuple(newPosPlayer)
     return newPosPlayer, posBox
 
-def isFailed(posBox):
+def isFailed(posBox, posGoals, posWalls):
     """This function used to observe if the state is potentially failed, then prune the search"""
     rotatePattern = [[0,1,2,3,4,5,6,7,8],
                     [2,5,8,1,4,7,0,3,6],
@@ -151,7 +153,7 @@ def cost(actions):
     """A cost function"""
     return len([x for x in actions if x.islower()])
 
-def heuristic(posPlayer, posBox):
+def heuristic(posPlayer, posBox, posGoals):
     """A heuristic function to calculate the overall distance between the else boxes and the else goals"""
     distance = 0
     completes = set(posGoals) & set(posBox)

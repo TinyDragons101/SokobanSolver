@@ -11,7 +11,7 @@ if __name__ == '__main__':
     time_start = time.time()
     layout, method = readCommand(sys.argv[1:]).values()
     gameState = transferToGameState(layout)
-
+    
     if method == 'astar':
         aStarSearch(gameState)
     elif method == 'dfs':
