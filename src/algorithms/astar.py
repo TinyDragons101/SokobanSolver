@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils import *
+from src.algorithms.utils import *
 
 def aStarSearch(gameState):
     """Implement aStarSearch approach"""
