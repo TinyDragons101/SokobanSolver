@@ -17,7 +17,7 @@ def a_star_search(game_state, stone_weight):
     states = PriorityQueue()
     states.push([begin_state], heuristic(begin_stones, pos_of_switches))
     actions = PriorityQueue()
-    actions.push([0], heuristic(begin_stones, pos_of_switches))
+    actions.push([], heuristic(begin_stones, pos_of_switches))
     weights = PriorityQueue()
     weights.push(0, heuristic(begin_stones, pos_of_switches))
     exploredSet = set()
@@ -27,7 +27,7 @@ def a_star_search(game_state, stone_weight):
         node_action = actions.pop()
         node_weight = weights.pop()
         
-        if is_end_state(node[-1][-1], pos_of_switches):
+        if is_end_state(node[-1][1], pos_of_switches):
             steps = node_action
             step_cnt = len(node_action)
             total_weight = node_weight
@@ -35,16 +35,16 @@ def a_star_search(game_state, stone_weight):
         
         if node[-1] not in exploredSet:
             exploredSet.add(node[-1])
-            Cost = cost(node_action[1:])
+            Cost = cost(node_action)
             for action in legal_actions(node[-1][0], node[-1][1], pos_of_walls):
                 new_pos_of_player, new_pos_of_stones, weight_push = update_state(action, node[-1][0], node[-1][1])
                 if is_failed(new_pos_of_stones, pos_of_switches, pos_of_walls):
                     continue
                 node_cnt += 1
                 Heuristic = heuristic(new_pos_of_stones, pos_of_switches)
-                states.push(node + [(new_pos_of_player, new_pos_of_stones)], Heuristic + Cost) 
-                actions.push(node_action + [action[-1]], Heuristic + Cost)
-                weights.push(node_weight + weight_push, Heuristic + Cost)
+                states.push(node + [(new_pos_of_player, new_pos_of_stones)], Heuristic + Cost + node_weight) 
+                actions.push(node_action + [action[-1]], Heuristic + Cost + node_weight)
+                weights.push(node_weight + weight_push, Heuristic + Cost + node_weight)
     
     return step_cnt, node_cnt, total_weight, steps
 

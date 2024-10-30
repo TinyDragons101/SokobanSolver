@@ -115,5 +115,5 @@ def execute_algorithm(game_state, stone_weight, algorithm):
     return step_cnt, node_cnt, weight_total, duration, memory_usage, steps
 
 def execute_search(game_state, stone_weight):
-    _, _, _, bfs_steps = breadth_first_search(game_state, stone_weight)
+    _, _, _, bfs_steps = a_star_search(game_state, stone_weight)
     return bfs_steps

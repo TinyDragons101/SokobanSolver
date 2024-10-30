@@ -2,19 +2,17 @@ import numpy as np
 import heapq
 
 class PriorityQueue:
-    """A class for priority queue"""
+    "heapq in Python is min-heap"
     def  __init__(self):
-        self.heap = []
-        self.cnt = 0
+        self.queue = []
+        self.index = 0
 
     def push(self, item, priority):
-        entry = (priority, self.cnt, item)
-        heapq.heappush(self.heap, entry)
-        self.cnt += 1
+        heapq.heappush(self.queue, (priority, self.index, item))
+        self.index += 1
 
     def pop(self):
-        (_, _, item) = heapq.heappop(self.heap)
-        return item
+        return heapq.heappop(self.queue)[-1]
 
     def is_empty(self):
         return len(self.heap) == 0
