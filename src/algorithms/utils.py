@@ -126,13 +126,17 @@ def cost(actions):
     return len([x for x in actions if x.islower()])
 
 def heuristic(pos_of_stones, pos_of_switches):
-    """A heuristic function to calculate the overall distance between the remaining stones and the remaining switches"""
-    pos_of_stones = (tuple(stone[0:2] for stone in pos_of_stones))
+    pos_of_stones = set(tuple(stone[0:2] for stone in pos_of_stones))
+    pos_of_switches = set(pos_of_switches)
 
-    distance = 0
-    completes = set(pos_of_stones) & set(pos_of_switches)
-    sorted_pos_of_stones = list(set(pos_of_stones).difference(completes))
-    sorted_pos_of_switches = list(set(pos_of_switches).difference(completes))
-    for i in range(len(sorted_pos_of_stones)):
-        distance += abs(sorted_pos_of_stones[i][0] - sorted_pos_of_switches[i][0]) + abs(sorted_pos_of_stones[i][1] - sorted_pos_of_switches[i][1])
-    return distance
+    total_distance = 0
+    
+    pos_of_stones_on_switches = pos_of_stones & pos_of_switches
+    
+    list_pos_of_stones = list(pos_of_stones - pos_of_stones_on_switches)
+    list_pos_of_switches = list(pos_of_switches - pos_of_stones_on_switches)
+    
+    for i in range(len(list_pos_of_stones)):
+        total_distance += abs(list_pos_of_stones[i][0] - list_pos_of_switches[i][0]) + abs(list_pos_of_stones[i][1] - list_pos_of_switches[i][1])
+        
+    return total_distance
