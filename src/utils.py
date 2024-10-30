@@ -19,13 +19,13 @@ ARES_ON_SWITCH = "+"
 def read_command(argv):
     """Read command arguments"""
     parser = OptionParser()
-    parser.add_option('-l', '--level', dest='sokoban_levels', default='tests/input-01.txt')
+    parser.add_option('-l', '--level', dest='sokoban_levels', default='input-01.txt')
     parser.add_option('-m', '--method', dest='agent_method', default='bfs')
     
     options, _ = parser.parse_args(argv)
     args = dict()
 
-    with open('./' + options.sokoban_levels, "r") as f:
+    with open('./tests/' + options.sokoban_levels, "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
         stone_weight = tuple(int(x) for x in stone_weight)
