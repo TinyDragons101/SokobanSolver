@@ -1,18 +1,18 @@
 import numpy as np
 
-from utils import *
-
-def aStarSearch(gameState):
-    """Implement aStarSearch approach"""
+from src.algorithms.utils import *
+    
+def uniformCostSearch(gameState):
+    """Implement uniformCostSearch approach"""
     beginBox = PosOfBoxes(gameState)
     beginPlayer = PosOfPlayer(gameState)
 
-    start_state = (beginPlayer, beginBox)
+    startState = (beginPlayer, beginBox)
     frontier = PriorityQueue()
-    frontier.push([start_state], heuristic(beginPlayer, beginBox))
+    frontier.push([startState], 0)
     exploredSet = set()
     actions = PriorityQueue()
-    actions.push([0], heuristic(beginPlayer, start_state[1]))
+    actions.push([0], 0)
     while frontier:
         node = frontier.pop()
         node_action = actions.pop()
@@ -26,6 +26,6 @@ def aStarSearch(gameState):
                 newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action)
                 if isFailed(newPosBox):
                     continue
-                Heuristic = heuristic(newPosPlayer, newPosBox)
-                frontier.push(node + [(newPosPlayer, newPosBox)], Heuristic + Cost) 
-                actions.push(node_action + [action[-1]], Heuristic + Cost)
+                frontier.push(node + [(newPosPlayer, newPosBox)], Cost)
+                actions.push(node_action + [action[-1]], Cost)
+    

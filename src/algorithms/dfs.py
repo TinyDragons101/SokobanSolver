@@ -1,6 +1,6 @@
 import collections
 
-from utils import *
+from src.algorithms.utils import *
 
 def depthFirstSearch(gameState, stoneWeight):
     """Implement depthFirstSearch approach"""
