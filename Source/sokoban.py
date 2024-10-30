@@ -15,7 +15,7 @@ if __name__ == '__main__':
     if method == 'astar':
         aStarSearch(gameState)
     elif method == 'dfs':
-        depthFirstSearch(gameState)
+        step_cnt, node_cnt, weight_total = depthFirstSearch(gameState, stoneWeight)
     elif method == 'bfs':
         step_cnt, node_cnt, weight_total = breadthFirstSearch(gameState, stoneWeight)
     elif method == 'ucs':

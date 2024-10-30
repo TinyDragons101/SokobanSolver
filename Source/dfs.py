@@ -2,26 +2,42 @@ import collections
 
 from utils import *
 
-def depthFirstSearch(gameState):
+def depthFirstSearch(gameState, stoneWeight):
     """Implement depthFirstSearch approach"""
-    beginBox = PosOfBoxes(gameState)
+    beginStone = PosOfStones(gameState, stoneWeight)
     beginPlayer = PosOfPlayer(gameState)
-
-    startState = (beginPlayer, beginBox)
-    frontier = collections.deque([[startState]])
+    posWalls = PosOfWalls(gameState)
+    posGoals = PosOfGoals(gameState)
+    
+    step_cnt = 0    
+    node_cnt = 0
+    weight_total = 0
+    
+    startState = (beginPlayer, beginStone)
+    frontier = [[startState]]
+    weights = [0]
+    actions = [[0]]
     exploredSet = set()
-    actions = [[0]] 
+     
     while frontier:
         node = frontier.pop()
         node_action = actions.pop()
-        if isEndState(node[-1][-1]):
+        node_weight = weights.pop()
+        
+        if isEndState(posStone=node[-1][1], posGoals=posGoals):
             print(','.join(node_action[1:]).replace(',',''))
+            node_cnt = len(node)
+            step_cnt = len(node_action)
+            weight_total = node_weight
             break
         if node[-1] not in exploredSet:
             exploredSet.add(node[-1])
-            for action in legalActions(node[-1][0], node[-1][1]):
-                newPosPlayer, newPosBox = updateState(node[-1][0], node[-1][1], action)
-                if isFailed(newPosBox):
+            for action in legalActions(posPlayer=node[-1][0], posStone=node[-1][1], posWalls=posWalls):
+                newPosPlayer, newPosStone, weightPush = updateState(node[-1][0], node[-1][1], action)
+                if isFailed(posStone=newPosStone, posGoals=posGoals, posWalls=posWalls):
                     continue
-                frontier.append(node + [(newPosPlayer, newPosBox)])
+                frontier.append(node + [(newPosPlayer, newPosStone)])
                 actions.append(node_action + [action[-1]])
+                weights.append(node_weight + weightPush)
+
+    return step_cnt - 1, node_cnt, weight_total
