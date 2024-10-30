@@ -2,11 +2,15 @@ from optparse import OptionParser
 import numpy as np
 import time
 import tracemalloc
+import os
 
 from src.algorithms.bfs import *
 from src.algorithms.dfs import *
 from src.algorithms.ucs import *
 from src.algorithms.astar import *
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+TESTS_DIR = os.path.join("tests")
 
 SPACE = " "
 WALL = "#"
@@ -25,7 +29,8 @@ def read_command(argv):
     options, _ = parser.parse_args(argv)
     args = dict()
 
-    with open('./tests/' + options.sokoban_levels, "r") as f:
+    input_file = os.path.join(TESTS_DIR, options.sokoban_levels)
+    with open(input_file, "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
         stone_weight = tuple(int(x) for x in stone_weight)
@@ -80,7 +85,8 @@ def transfer_to_game_state(layout):
 
 def get_game_state(filename):
     """Get the initial game state from input file"""
-    with open('./tests/' + filename, "r") as f:
+    input_file = os.path.join(TESTS_DIR, filename)
+    with open(input_file, "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
         stone_weight = tuple(int(x) for x in stone_weight)
