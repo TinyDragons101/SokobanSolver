@@ -53,8 +53,29 @@ def transfer_to_game_state(layout):
             elif layout[irow][icol] == ARES_ON_SWITCH: layout[irow][icol] = 6
         num_cols = len(layout[irow])
         if num_cols < max_num_cols:
-            layout[irow].extend([0 for _ in range(max_num_cols - num_cols)]) 
-            
+            layout[irow].extend([-1 for _ in range(max_num_cols - num_cols)]) 
+    
+    for irow in range(len(layout)):
+        for icol in range(len(layout[0])):
+            if layout[irow][icol] > 0:
+                break
+            elif layout[irow][icol] == 0:
+                layout[irow][icol] = -1
+
+    for icol in range(len(layout[0])):
+        for irow in range(len(layout)):
+            if layout[irow][icol] > 0:
+                break
+            elif layout[irow][icol] == 0:
+                layout[irow][icol] = -1
+    
+    for icol in range(len(layout[0])):
+        for irow in range(len(layout) - 1, -1, -1):
+            if layout[irow][icol] > 0:
+                break
+            elif layout[irow][icol] == 0:
+                layout[irow][icol] = -1
+
     return np.array(layout)
 
 def get_game_state(filename):
@@ -62,7 +83,7 @@ def get_game_state(filename):
     with open('./tests/' + filename, "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
-        stone_weight = (int(x) for x in stone_weight)
+        stone_weight = tuple(int(x) for x in stone_weight)
         
         layout = f.readlines()
 

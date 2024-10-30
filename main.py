@@ -29,7 +29,10 @@ FRAME_WIDTH = 790
 FRAME_HEIGHT = 610
 BORDER_SIZE = 5
 
+GAME_COLOR = (20, 18, 20)
 TILE_SIZE = 50
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
 class Button:
     def __init__(self, x, y, width, height, text, color=BUTTON_COLOR, text_size=TEXT_SIZE, text_color=TEXT_COLOR):
@@ -92,6 +95,7 @@ def draw_loading(screen):
     
 def load():
     global game_state
+    global stones
     global pos_of_ares
     global steps
     global tile_size
@@ -105,6 +109,10 @@ def load():
     global fit_switch
 
     game_state, stone_weight = get_game_state(levels[current_level_index])
+    pos_of_stones = [tuple(x) for x in np.argwhere((game_state == 3) | (game_state == 5))]
+    stones = {}
+    for index, pos in enumerate(pos_of_stones):
+        stones[pos] = stone_weight[index]
     pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
     steps = execute_search(game_state, stone_weight)
 
@@ -123,13 +131,17 @@ def load():
     pygame.event.post(pygame.event.Event(LOAD_COMPLETE_EVENT))
 
 def draw_game_map(screen):
+    font = pygame.font.Font(None, int(tile_size / TILE_SIZE * 30))
+
     width = game_state.shape[1] * tile_size
     height = game_state.shape[0] * tile_size
     game_surface = pygame.Surface((width, height))
-    game_surface.fill(BACKGROUND_COLOR)
+    game_surface.fill(GAME_COLOR)
 
     for i in range(game_state.shape[0]):
         for j in range(game_state.shape[1]):
+            if game_state[i, j] == -1:
+                pygame.draw.rect(game_surface, BACKGROUND_COLOR, (j * tile_size, i * tile_size, tile_size, tile_size))
             if game_state[i, j] == 1:
                 game_surface.blit(fit_wall, (j * tile_size, i * tile_size))
             elif game_state[i, j] == 2 or game_state[i, j] == 6:
@@ -145,17 +157,33 @@ def draw_game_map(screen):
                     game_surface.blit(fit_ares_right, (j * tile_size, i * tile_size))
             elif game_state[i, j] == 3:
                 game_surface.blit(fit_stone, (j * tile_size, i * tile_size))
+                center = (j * tile_size + tile_size // 2, i * tile_size + tile_size // 2)
+                pygame.draw.circle(game_surface, WHITE, center, tile_size // 4)
+                weight_text = font.render(str(stones[(i, j)]), True, BLACK)
+                weight_rect = weight_text.get_rect(center=center)
+                game_surface.blit(weight_text, weight_rect)
             elif game_state[i, j] == 4:
                 game_surface.blit(fit_switch, (j * tile_size, i * tile_size))
             elif game_state[i, j] == 5:
                 game_surface.blit(fit_stone_on_switch, (j * tile_size, i * tile_size))
+                center = (j * tile_size + tile_size // 2, i * tile_size + tile_size // 2)
+                pygame.draw.circle(game_surface, WHITE, center, tile_size // 4)
+                weight_text = font.render(str(stones[(i, j)]), True, BLACK)
+                weight_rect = weight_text.get_rect(center=center)
+                game_surface.blit(weight_text, weight_rect)
 
     screen.blit(game_surface, (FRAME_LEFT + (FRAME_WIDTH - width) // 2, (FRAME_TOP + (FRAME_HEIGHT - height) // 2)))
 
 def draw_game_screen(screen):
     board_frame = pygame.Rect(FRAME_LEFT, FRAME_TOP, FRAME_WIDTH, FRAME_HEIGHT)
+    font = pygame.font.Font(None, TEXT_SIZE)
+    step_text = font.render("Step: " + str(current_step_index), True, BUTTON_COLOR)
+    weight_text = font.render("Weight: " + str(current_weight), True, BUTTON_COLOR)
 
     screen.fill(BACKGROUND_COLOR)
+
+    screen.blit(step_text, (50, 100))
+    screen.blit(weight_text, (50, 150))
 
     back_button.draw(screen)
     play_pause_button.draw(screen)
@@ -167,6 +195,7 @@ def draw_game_screen(screen):
 
 def next_game_state(game_state, previous_states):
     global current_step_index
+    global current_weight
     global previous_move
     global pos_of_ares
     global playing
@@ -197,8 +226,11 @@ def next_game_state(game_state, previous_states):
     
     if current_step.isupper():
         pos_of_stone = 2 * new_pos_of_ares - pos_of_ares
+        stones[tuple(pos_of_stone)] = stones[tuple(new_pos_of_ares)]
+        stones.pop(tuple(new_pos_of_ares))
+        current_weight += stones[tuple(pos_of_stone)]
         x, y = pos_of_stone
-        if game_state[x, y] == 4: 
+        if game_state[x, y] == 4:
             game_state[x, y] = 5
         else: 
             game_state[x, y] = 3 
@@ -214,6 +246,7 @@ def next_game_state(game_state, previous_states):
 def back_game_state(previous_states):
     global game_state
     global current_step_index
+    global current_weight
     global previous_move
     global pos_of_ares
 
@@ -221,8 +254,15 @@ def back_game_state(previous_states):
         return
     game_state = previous_states.pop()
     current_step_index -= 1
-    previous_move = 'd' if current_step_index == 0 else steps[current_step_index].lower()
+    if steps[current_step_index].isupper(): 
+        pos_of_stone = pos_of_ares
+    previous_move = 'd' if current_step_index == 0 else steps[current_step_index - 1].lower()
     pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
+    if steps[current_step_index].isupper():
+        old_pos_of_stone = 2 * pos_of_stone - pos_of_ares
+        stones[tuple(pos_of_stone)] = stones[tuple(old_pos_of_stone)]
+        stones.pop(tuple(old_pos_of_stone))
+        current_weight -= stones[tuple(pos_of_stone)]
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Sokoban")
@@ -242,6 +282,7 @@ current_angle = math.pi / 2
 LOAD_COMPLETE_EVENT = pygame.USEREVENT + 1
 
 game_state = None
+stones = None
 pos_of_ares = None
 steps = None
 
@@ -278,6 +319,8 @@ previous_states = []
 current_step_index = 0
 
 playing = False
+
+current_weight = 0
 
 gaming = False
 
