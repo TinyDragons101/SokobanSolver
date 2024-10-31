@@ -9,16 +9,19 @@ from src.algorithms.astar import *
 if __name__ == '__main__':
     layout, stone_weight, method = read_command(sys.argv[1:]).values()
     game_state = transfer_to_game_state(layout)
-    start_time = time.time()
+
     if method == 'bfs':
         step_cnt, node_cnt, weight_total, duration, memory_usage, steps = execute_algorithm(game_state, stone_weight, breadth_first_search)
         print('BFS')
     elif method == 'dfs':
-        pass
+        step_cnt, node_cnt, weight_total, duration, memory_usage, steps = execute_algorithm(game_state, stone_weight, depth_first_search)
+        print('DFS')
     elif method == 'ucs':
-        pass
+        step_cnt, node_cnt, weight_total, duration, memory_usage, steps = execute_algorithm(game_state, stone_weight, breadth_first_search)
+        print('UCS')
     elif method == 'astar':
-        pass
+        step_cnt, node_cnt, weight_total, duration, memory_usage, steps = execute_algorithm(game_state, stone_weight, a_star_search)
+        print('A*')
     else:
         raise ValueError('Invalid method.')
 

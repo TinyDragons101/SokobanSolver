@@ -77,8 +77,8 @@ def draw_start_screen(screen):
     start_button.draw(screen)
     screen.blit(choose_level_text, choose_level_rect)
     screen.blit(level_text, level_rect)
-    decrease_button.draw(screen)
-    increase_button.draw(screen)
+    level_decrease_button.draw(screen)
+    level_increase_button.draw(screen)
 
 def draw_loading(screen):
     darken_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -95,9 +95,16 @@ def draw_loading(screen):
     
 def load():
     global game_state
+    global initial_game_state
+    global stone_weight
     global stones
     global pos_of_ares
-    global steps
+    global all_steps
+    global current_step_index
+    global current_weight
+    global previous_move
+    global previous_states
+    global current_algorithm_index
     global tile_size
     global fit_wall
     global fit_ares_back
@@ -109,12 +116,19 @@ def load():
     global fit_switch
 
     game_state, stone_weight = get_game_state(levels[current_level_index])
+    initial_game_state = np.copy(game_state)
     pos_of_stones = [tuple(x) for x in np.argwhere((game_state == 3) | (game_state == 5))]
     stones = {}
     for index, pos in enumerate(pos_of_stones):
         stones[pos] = stone_weight[index]
     pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
-    steps = execute_search(game_state, stone_weight)
+    all_steps = execute_search(game_state, stone_weight)
+
+    current_step_index = 0
+    current_weight = 0
+    previous_move = 'd'
+    previous_states = []
+    current_algorithm_index = 0
 
     width = game_state.shape[1] * TILE_SIZE
     height = game_state.shape[0] * TILE_SIZE
@@ -179,19 +193,65 @@ def draw_game_screen(screen):
     font = pygame.font.Font(None, TEXT_SIZE)
     step_text = font.render("Step: " + str(current_step_index), True, BUTTON_COLOR)
     weight_text = font.render("Weight: " + str(current_weight), True, BUTTON_COLOR)
+    algorithm_text = font.render("Algorithm: ", True, BUTTON_COLOR)
+    algortihm_chosen_text = font.render(algorithms[current_algorithm_index], True, BUTTON_COLOR)
+    algortihm_chosen_rect = algortihm_chosen_text.get_rect(center=(190, 280))
 
     screen.fill(BACKGROUND_COLOR)
 
+    return_button.draw(screen)
+    algorithm_left_button.draw(screen)
+    algorithm_right_button.draw(screen)
+
     screen.blit(step_text, (50, 100))
     screen.blit(weight_text, (50, 150))
+    screen.blit(algorithm_text, (50, 200))
+    screen.blit(algortihm_chosen_text, algortihm_chosen_rect)
 
     back_button.draw(screen)
     play_pause_button.draw(screen)
     next_button.draw(screen)
+    reset_button.draw(screen)
 
+    pygame.draw.rect(screen, WHITE, (25, 25, 30, 55))
+    pygame.draw.polygon(screen, BUTTON_COLOR, [(26, 26), (26, 80), (50, 90), (50, 16)])
+    pygame.draw.circle(screen, WHITE, (45, 53), 2)
+
+    pygame.draw.polygon(screen, BUTTON_COLOR, [(820, 40), (820, 80), (780, 60)])
+    pygame.draw.rect(screen, BUTTON_COLOR, (825, 40, 10, 40))
+    if playing:
+        pygame.draw.rect(screen, BUTTON_COLOR, (860, 30, 15, 60))
+        pygame.draw.rect(screen, BUTTON_COLOR, (885, 30, 15, 60))
+    else:
+        pygame.draw.polygon(screen, BUTTON_COLOR, [(860, 30), (860, 90), (900, 60)])
+    pygame.draw.rect(screen, BUTTON_COLOR, (925, 40, 10, 40))
+    pygame.draw.polygon(screen, BUTTON_COLOR, [(940, 40), (940, 80), (980, 60)])
     pygame.draw.rect(screen, BUTTON_COLOR, board_frame, BORDER_SIZE, BORDER_SIZE)
+    pygame.draw.arc(screen, TEXT_COLOR, (1220, 40, 40, 40), - math.pi, math.pi / 2, 10)
+    pygame.draw.polygon(screen, TEXT_COLOR, [(1240, 35), (1240, 55), (1225, 45)])
 
     draw_game_map(screen)
+
+def back_game_state(previous_states):
+    global game_state
+    global current_step_index
+    global current_weight
+    global previous_move
+    global pos_of_ares
+
+    if len(previous_states) == 0:
+        return
+    game_state = previous_states.pop()
+    current_step_index -= 1
+    if steps[current_step_index].isupper(): 
+        pos_of_stone = pos_of_ares
+    previous_move = 'd' if current_step_index == 0 else steps[current_step_index - 1].lower()
+    pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
+    if steps[current_step_index].isupper():
+        old_pos_of_stone = 2 * pos_of_stone - pos_of_ares
+        stones[tuple(pos_of_stone)] = stones[tuple(old_pos_of_stone)]
+        stones.pop(tuple(old_pos_of_stone))
+        current_weight -= stones[tuple(pos_of_stone)]
 
 def next_game_state(game_state, previous_states):
     global current_step_index
@@ -236,33 +296,36 @@ def next_game_state(game_state, previous_states):
             game_state[x, y] = 3 
 
     x, y = new_pos_of_ares
-    if game_state[x, y] == 4: game_state[x, y] = 6
+    if game_state[x, y] == 4 or game_state[x, y] == 5: game_state[x, y] = 6
     else: game_state[x, y] = 2
 
     current_step_index += 1
     previous_move = current_step.lower()
     pos_of_ares = new_pos_of_ares
 
-def back_game_state(previous_states):
+
+def reset():
+    global playing
     global game_state
+    global stones
+    global pos_of_ares
     global current_step_index
     global current_weight
     global previous_move
-    global pos_of_ares
+    global previous_states
 
-    if len(previous_states) == 0:
-        return
-    game_state = previous_states.pop()
-    current_step_index -= 1
-    if steps[current_step_index].isupper(): 
-        pos_of_stone = pos_of_ares
-    previous_move = 'd' if current_step_index == 0 else steps[current_step_index - 1].lower()
+    if playing:
+        playing = False
+    game_state = np.copy(initial_game_state)
+    pos_of_stones = [tuple(x) for x in np.argwhere((game_state == 3) | (game_state == 5))]
+    stones = {}
+    for index, pos in enumerate(pos_of_stones):
+        stones[pos] = stone_weight[index]
     pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
-    if steps[current_step_index].isupper():
-        old_pos_of_stone = 2 * pos_of_stone - pos_of_ares
-        stones[tuple(pos_of_stone)] = stones[tuple(old_pos_of_stone)]
-        stones.pop(tuple(old_pos_of_stone))
-        current_weight -= stones[tuple(pos_of_stone)]
+    current_step_index = 0
+    current_weight = 0
+    previous_move = 'd'
+    previous_states = []
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Sokoban")
@@ -274,21 +337,28 @@ start_button = Button((SCREEN_WIDTH - BUTTON_WIDTH) // 2, 350, BUTTON_WIDTH, BUT
 current_level_index = 0
 levels = os.listdir(".\\tests")
 
-decrease_button = PolygonButton([(500, 510), (500, 570), (450, 540)])
-increase_button = PolygonButton([(780, 510), (780, 570), (830, 540)])
+level_decrease_button = PolygonButton([(500, 510), (500, 570), (450, 540)])
+level_increase_button = PolygonButton([(780, 510), (780, 570), (830, 540)])
 
 current_angle = math.pi / 2
 
 LOAD_COMPLETE_EVENT = pygame.USEREVENT + 1
 
 game_state = None
+initial_game_state = None
+stone_weight = None
 stones = None
 pos_of_ares = None
+all_steps = None
+current_algorithm_index = 0
+algorithms = ['BFS', 'DFS', 'UCS', 'A*']
 steps = None
 
 loading = False
 
 starting = True
+
+return_button = PolygonButton([(20, 20), (20, 80), (60, 80), (60, 20)])
 
 wall = pygame.image.load(".\\images\\wall.png")
 ares_back = pygame.image.load(".\\images\\ares_back.png")
@@ -309,18 +379,21 @@ fit_stone = None
 fit_stone_on_switch = None
 fit_switch = None
 
-previous_move = 'd'
+previous_move = None
 
-back_button = PolygonButton([(780, 50), (840, 50), (840, 90), (780, 90)])
-play_pause_button = PolygonButton([(860, 50), (900, 50), (900, 90), (860, 90)])
-next_button = PolygonButton([(920, 50), (980, 50), (980, 90), (920, 90)])
+back_button = PolygonButton([(780, 40), (835, 40), (835, 80), (780, 80)], BACKGROUND_COLOR)
+algorithm_left_button = PolygonButton([(90, 250), (90, 310), (50, 280)])
+algorithm_right_button = PolygonButton([(290, 250), (290, 310), (330, 280)])
+play_pause_button = PolygonButton([(860, 30), (900, 30), (900, 90), (860, 90)], BACKGROUND_COLOR)
+next_button = PolygonButton([(925, 40), (980, 40), (980, 80), (925, 80)], BACKGROUND_COLOR)
+reset_button = PolygonButton([(1210, 30), (1270, 30), (1270, 90), (1210, 90)])
 
-previous_states = []
-current_step_index = 0
+previous_states = None
+current_step_index = None
 
 playing = False
 
-current_weight = 0
+current_weight = None
 
 gaming = False
 
@@ -333,9 +406,9 @@ while running:
                 if start_button.is_selected(event.pos):
                     threading.Thread(target=load).start()
                     loading = True
-                elif decrease_button.is_selected(event.pos):
+                elif level_decrease_button.is_selected(event.pos):
                     current_level_index = (current_level_index - 1 + len(levels)) % len(levels)
-                elif increase_button.is_selected(event.pos):
+                elif level_increase_button.is_selected(event.pos):
                     current_level_index = (current_level_index + 1) % len(levels)
             elif gaming:
                 if back_button.is_selected(event.pos) and not playing:
@@ -344,7 +417,24 @@ while running:
                     playing = not playing
                 elif next_button.is_selected(event.pos) and not playing:
                     next_game_state(game_state, previous_states)
+                elif reset_button.is_selected(event.pos):
+                    reset()
+                elif return_button.is_selected(event.pos):
+                    if playing:
+                        playing = False
+                    gaming = False
+                    starting = True
+                elif algorithm_left_button.is_selected(event.pos):
+                    current_algorithm_index = (current_algorithm_index - 1 + len(algorithms)) % len(algorithms)
+                    steps = all_steps[algorithms[current_algorithm_index]]
+                    reset()
+                elif algorithm_right_button.is_selected(event.pos):
+                    current_algorithm_index = (current_algorithm_index + 1) % len(algorithms)
+                    steps = all_steps[algorithms[current_algorithm_index]]
+                    reset()
         elif event.type == LOAD_COMPLETE_EVENT:
+            current_angle = math.pi / 2
+            steps = all_steps[algorithms[current_algorithm_index]]
             if starting and loading:
                 loading = False
                 starting = False
@@ -355,7 +445,7 @@ while running:
 
         if loading:
             draw_loading(screen)
-            current_angle = current_angle - math.pi / 9
+            current_angle = current_angle - math.pi / 6
             if (current_angle <= 0):
                 current_angle += 2 * math.pi
 

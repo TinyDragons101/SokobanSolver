@@ -108,6 +108,23 @@ def execute_algorithm(game_state, stone_weight, algorithm):
 
     return step_cnt, node_cnt, weight_total, duration, memory_usage, steps
 
+def write_search_output(game_state, stone_weight, algorithm, mode, filename):
+    step_cnt, node_cnt, weight_total, duration, memory_usage, steps = execute_algorithm(game_state, stone_weight, algorithm)
+    with open("./outputs/" + filename, "a") as f:
+        f.write(mode + '\n')
+        f.write('Steps: %d, Weight: %d, Node: %d, Time (ms): %.2f, Memory (MB): %.2f\n' %(step_cnt, weight_total, node_cnt, duration, memory_usage))
+        for step in steps:
+            f.write(step)
+        f.write('\n')
+
 def execute_search(game_state, stone_weight):
     _, _, _, bfs_steps = breadth_first_search(game_state, stone_weight)
-    return bfs_steps
+    _, _, _, dfs_steps = depth_first_search(game_state, stone_weight)
+    _, _, _, ucs_steps = uniform_cost_search(game_state, stone_weight)
+    _, _, _, astar_steps = a_star_search(game_state, stone_weight)
+    steps = dict()
+    steps['BFS'] = bfs_steps
+    steps['DFS'] = dfs_steps
+    steps['UCS'] = ucs_steps
+    steps['A*'] = astar_steps
+    return steps
