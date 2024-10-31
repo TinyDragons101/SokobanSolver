@@ -1,12 +1,17 @@
+import os
 from optparse import OptionParser
 import numpy as np
 import time
 import tracemalloc
+import subprocess
 
 from src.algorithms.bfs import *
 from src.algorithms.dfs import *
 from src.algorithms.ucs import *
 from src.algorithms.astar import *
+
+TEST_DIR = os.path.join("tests")
+OUTPUT_DIR = os.path.join("outputs")
 
 SPACE = " "
 WALL = "#"
@@ -25,7 +30,7 @@ def read_command(argv):
     options, _ = parser.parse_args(argv)
     args = dict()
 
-    with open('./tests/' + options.sokoban_levels, "r") as f:
+    with open(os.path.join(TEST_DIR, options.sokoban_levels), "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
         stone_weight = tuple(int(x) for x in stone_weight)
@@ -80,7 +85,7 @@ def transfer_to_game_state(layout):
 
 def get_game_state(filename):
     """Get the initial game state from input file"""
-    with open('./tests/' + filename, "r") as f:
+    with open(os.path.join(TEST_DIR, filename), "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
         stone_weight = tuple(int(x) for x in stone_weight)
@@ -110,14 +115,15 @@ def execute_algorithm(game_state, stone_weight, algorithm):
 
 def write_search_output(game_state, stone_weight, algorithm, mode, filename):
     step_cnt, node_cnt, weight_total, duration, memory_usage, steps = execute_algorithm(game_state, stone_weight, algorithm)
-    with open("./outputs/" + filename, "a") as f:
+    with open(os.path.join(OUTPUT_DIR, filename), "a") as f:
         f.write(mode + '\n')
         f.write('Steps: %d, Weight: %d, Node: %d, Time (ms): %.2f, Memory (MB): %.2f\n' %(step_cnt, weight_total, node_cnt, duration, memory_usage))
         for step in steps:
             f.write(step)
         f.write('\n')
 
-def execute_search(game_state, stone_weight):
+def execute_search(game_state, stone_weight, filename):
+    subprocess.run(["python", "script.py", filename])
     _, _, _, bfs_steps = breadth_first_search(game_state, stone_weight)
     _, _, _, dfs_steps = depth_first_search(game_state, stone_weight)
     _, _, _, ucs_steps = uniform_cost_search(game_state, stone_weight)
@@ -127,4 +133,15 @@ def execute_search(game_state, stone_weight):
     steps['DFS'] = dfs_steps
     steps['UCS'] = ucs_steps
     steps['A*'] = astar_steps
+    return steps
+
+def load_search(filename):
+    steps = dict()
+    with open(os.path.join(OUTPUT_DIR, filename), "r") as f:
+        for _ in range(4):
+            algorithm = f.readline()[:-1]
+            f.readline()
+            step = f.readline()[:-1]
+            steps[algorithm] = list(step)
+
     return steps

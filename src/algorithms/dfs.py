@@ -23,18 +23,19 @@ def depth_first_search(game_state, stone_weight):
         node_weight = weights.pop()
 
         if is_end_state(node[-1][1], pos_of_switches):
+            node_cnt += 1
             steps = node_action
             step_cnt = len(node_action)
             total_weight = node_weight
             break
 
         if node[-1] not in explored_set:
+            node_cnt += 1
             explored_set.add(node[-1])
             for action in legal_actions(node[-1][0], node[-1][1], pos_of_walls):
                 new_pos_of_player, new_pos_of_stones, weight_push = update_state(action, node[-1][0], node[-1][1])
                 if is_failed(new_pos_of_stones, pos_of_switches, pos_of_walls):
                     continue
-                node_cnt += 1
                 states.append(node + [(new_pos_of_player, new_pos_of_stones)])
                 actions.append(node_action + [action[-1]])
                 weights.append(node_weight + weight_push)

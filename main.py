@@ -7,6 +7,11 @@ from src.utils import *
 
 pygame.init()
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_DIR = os.path.join(CURRENT_DIR, "tests")
+OUTPUT_DIR = os.path.join(CURRENT_DIR, "outputs")
+IMAGE_DIR = os.path.join(CURRENT_DIR, "images")
+
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
@@ -63,7 +68,7 @@ class PolygonButton:
         return self.rect.collidepoint(pos)
 
 def draw_start_screen(screen):
-    title = pygame.image.load(".\\images\\title.png")
+    title = pygame.image.load(os.path.join(IMAGE_DIR, "title.png"))
 
     font = pygame.font.Font(None, int((8/9)*TEXT_SIZE))
     font.set_italic(True)
@@ -122,7 +127,11 @@ def load():
     for index, pos in enumerate(pos_of_stones):
         stones[pos] = stone_weight[index]
     pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
-    all_steps = execute_search(game_state, stone_weight)
+    filename = "out" + levels[current_level_index][2:]
+    if os.path.exists(os.path.join(OUTPUT_DIR, filename)):
+        all_steps = load_search(filename)
+    else:
+        all_steps = execute_search(game_state, stone_weight, levels[current_level_index])
 
     current_step_index = 0
     current_weight = 0
@@ -335,7 +344,7 @@ running = True
 start_button = Button((SCREEN_WIDTH - BUTTON_WIDTH) // 2, 350, BUTTON_WIDTH, BUTTON_HEIGHT, "START")
 
 current_level_index = 0
-levels = os.listdir(".\\tests")
+levels = os.listdir(TEST_DIR)
 
 level_decrease_button = PolygonButton([(500, 510), (500, 570), (450, 540)])
 level_increase_button = PolygonButton([(780, 510), (780, 570), (830, 540)])
@@ -360,14 +369,14 @@ starting = True
 
 return_button = PolygonButton([(20, 20), (20, 80), (60, 80), (60, 20)])
 
-wall = pygame.image.load(".\\images\\wall.png")
-ares_back = pygame.image.load(".\\images\\ares_back.png")
-ares_front = pygame.image.load(".\\images\\ares_front.png")
-ares_left = pygame.image.load(".\\images\\ares_left.png")
-ares_right = pygame.image.load(".\\images\\ares_right.png")
-stone = pygame.image.load(".\\images\\stone.png")
-stone_on_switch = pygame.image.load(".\\images\\stone_on_switch.png")
-switch = pygame.image.load(".\\images\\switch.png")
+wall = pygame.image.load(os.path.join(IMAGE_DIR, "wall.png"))
+ares_back = pygame.image.load(os.path.join(IMAGE_DIR, "ares_back.png"))
+ares_front = pygame.image.load(os.path.join(IMAGE_DIR, "ares_front.png"))
+ares_left = pygame.image.load(os.path.join(IMAGE_DIR, "ares_left.png"))
+ares_right = pygame.image.load(os.path.join(IMAGE_DIR, "ares_right.png"))
+stone = pygame.image.load(os.path.join(IMAGE_DIR, "stone.png"))
+stone_on_switch = pygame.image.load(os.path.join(IMAGE_DIR, "stone_on_switch.png"))
+switch = pygame.image.load(os.path.join(IMAGE_DIR, "switch.png"))
 
 tile_size = None
 fit_wall = None

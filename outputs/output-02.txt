@@ -1,12 +1,12 @@
 BFS
-Steps: 4, Weight: 3, Node: 12, Time (ms): 0.00, Memory (MB): 0.00
+Steps: 4, Weight: 3, Node: 8, Time (ms): 0.00, Memory (MB): 0.01
 UdrU
 DFS
-Steps: 5, Weight: 3, Node: 9, Time (ms): 0.00, Memory (MB): 0.00
+Steps: 5, Weight: 3, Node: 6, Time (ms): 0.00, Memory (MB): 0.00
 rUdlU
 UCS
-Steps: 0, Weight: 0, Node: 0, Time (ms): 0.00, Memory (MB): 0.00
-r
+Steps: 4, Weight: 3, Node: 8, Time (ms): 0.00, Memory (MB): 0.00
+UdrU
 A*
-Steps: 4, Weight: 3, Node: 10, Time (ms): 0.00, Memory (MB): 0.00
+Steps: 4, Weight: 3, Node: 8, Time (ms): 4.51, Memory (MB): 0.00
 UdrU

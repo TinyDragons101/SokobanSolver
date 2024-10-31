@@ -28,22 +28,24 @@ def a_star_search(game_state, stone_weight):
         node_weight = weights.pop()
         
         if is_end_state(node[-1][1], pos_of_switches):
+            node_cnt += 1
             steps = node_action
             step_cnt = len(node_action)
             total_weight = node_weight
             break
         
         if node[-1] not in explored_set:
+            node_cnt += 1
             explored_set.add(node[-1])
             for action in legal_actions(node[-1][0], node[-1][1], pos_of_walls):
                 new_pos_of_player, new_pos_of_stones, weight_push = update_state(action, node[-1][0], node[-1][1])
                 if is_failed(new_pos_of_stones, pos_of_switches, pos_of_walls):
                     continue
-                node_cnt += 1
-                cost_value = cost(node_action + [action[-1]])
+                cost_step_value = cost(node_action + [action[-1]])
                 heuristic_value = heuristic(new_pos_of_stones, pos_of_switches)
-                states.push(node + [(new_pos_of_player, new_pos_of_stones)], heuristic_value + cost_value + node_weight) 
-                actions.push(node_action + [action[-1]], heuristic_value + cost_value + node_weight)
-                weights.push(node_weight + weight_push, heuristic_value + cost_value + node_weight)
+                new_total_cost = heuristic_value + cost_step_value + node_weight + weight_push
+                states.push(node + [(new_pos_of_player, new_pos_of_stones)], new_total_cost) 
+                actions.push(node_action + [action[-1]], new_total_cost)
+                weights.push(node_weight + weight_push, new_total_cost)
     
     return step_cnt, node_cnt, total_weight, steps
