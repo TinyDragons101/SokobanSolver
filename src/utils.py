@@ -1,9 +1,8 @@
 import os
 from optparse import OptionParser
 import numpy as np
-import time
-import tracemalloc
 import subprocess
+import tracemalloc
 
 from src.algorithms.bfs import *
 from src.algorithms.dfs import *
@@ -97,19 +96,13 @@ def get_game_state(filename):
 
 def execute_algorithm(game_state, stone_weight, algorithm):
     """Get time and memory used by algorithm"""
-    begin_time = time.time()
-    algorithm(game_state, stone_weight)
-    end_time = time.time()
+    _, step_cnt, node_cnt, weight_total, duration, steps = algorithm(game_state, stone_weight)
 
     tracemalloc.start()
     algorithm(game_state, stone_weight)
     min_memory, max_memory = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-
-    duration = (end_time - begin_time) * 1000
-    memory_usage = (max_memory - min_memory) / (1024 * 1024)
-
-    step_cnt, node_cnt, weight_total, steps = algorithm(game_state, stone_weight)
+    memory_usage = (max_memory - min_memory) / (1024 ** 2)
 
     return step_cnt, node_cnt, weight_total, duration, memory_usage, steps
 
@@ -122,18 +115,11 @@ def write_search_output(game_state, stone_weight, algorithm, mode, filename):
             f.write(step)
         f.write('\n')
 
-def execute_search(game_state, stone_weight, filename):
-    subprocess.run(["python", "script.py", filename])
-    _, _, _, bfs_steps = breadth_first_search(game_state, stone_weight)
-    _, _, _, dfs_steps = depth_first_search(game_state, stone_weight)
-    _, _, _, ucs_steps = uniform_cost_search(game_state, stone_weight)
-    _, _, _, astar_steps = a_star_search(game_state, stone_weight)
-    steps = dict()
-    steps['BFS'] = bfs_steps
-    steps['DFS'] = dfs_steps
-    steps['UCS'] = ucs_steps
-    steps['A*'] = astar_steps
-    return steps
+def execute_search(dir, filename):
+    script_path = os.path.join(dir, "script.py")
+    subprocess.run(["python", script_path, filename])
+    output_filename = "out" + filename[2:]
+    return load_search(output_filename)
 
 def load_search(filename):
     steps = dict()

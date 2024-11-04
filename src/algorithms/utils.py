@@ -36,9 +36,9 @@ def get_pos_of_switches(game_state):
     """Return the positions of switches"""
     return tuple(tuple(x) for x in np.argwhere((game_state == 4) | (game_state == 5) | (game_state == 6)))
 
-def is_end_state(pos_stone, pos_goals):
+def is_end_state(pos_of_stones, pos_of_switches):
     """Check if all stones are on the switches"""
-    return sorted(tuple(stone[0:2] for stone in pos_stone)) == sorted(pos_goals)
+    return sorted(tuple(stone[0:2] for stone in pos_of_stones)) == sorted(pos_of_switches)
 
 def is_legal_action(action, pos_of_player, pos_of_stones, pos_of_walls):
     """Check if the given action is legal"""
@@ -56,7 +56,7 @@ def legal_actions(pos_of_player, pos_of_stones, pos_of_walls):
     legal_actions = []
     for action in all_actions:
         x1, y1 = x_player + action[0], y_player + action[1]
-        if (x1, y1) in (tuple(stone[0:2] for stone in pos_of_stones)):
+        if (x1, y1) in tuple(stone[0:2] for stone in pos_of_stones):
             action.pop(2)
         else:
             action.pop(3)
@@ -83,9 +83,9 @@ def update_state(action, pos_of_player, pos_of_stones):
     
     return new_pos_of_player, new_pos_of_stones, weight_push
 
-def is_failed(pos_of_stones, pos_of_switches, pos_of_walls):
+def is_failed(stone, pos_of_stones, pos_of_switches, pos_of_walls):
     """Observe if the current game state is potentially failed, then prune the search"""
-    pos_of_stones = (tuple(stone[0:2] for stone in pos_of_stones))
+    pos_of_stones = tuple(stone[0:2] for stone in pos_of_stones)
 
     all_patterns = \
     [
@@ -99,27 +99,27 @@ def is_failed(pos_of_stones, pos_of_switches, pos_of_walls):
         [0,3,6,1,4,7,2,5,8][::-1]
     ]
 
-    for stone in pos_of_stones:
-        if stone not in pos_of_switches:
-            board = \
-            [
-                (stone[0] - 1, stone[1] - 1), (stone[0] - 1, stone[1]), (stone[0] - 1, stone[1] + 1), 
-                (stone[0], stone[1] - 1), (stone[0], stone[1]), (stone[0], stone[1] + 1), 
-                (stone[0] + 1, stone[1] - 1), (stone[0] + 1, stone[1]), (stone[0] + 1, stone[1] + 1)
-            ]
-            for pattern in all_patterns:
-                new_board = [board[i] for i in pattern]
-                if new_board[1] in pos_of_walls and new_board[5] in pos_of_walls: 
-                    return True
-                elif new_board[1] in pos_of_stones and new_board[2] in pos_of_walls and new_board[5] in pos_of_walls: 
-                    return True
-                elif new_board[1] in pos_of_stones and new_board[2] in pos_of_walls and new_board[5] in pos_of_stones: 
-                    return True
-                elif new_board[1] in pos_of_stones and new_board[2] in pos_of_stones and new_board[5] in pos_of_stones: 
-                    return True
-                elif new_board[1] in pos_of_stones and new_board[2] in pos_of_walls and new_board[3] in pos_of_walls and new_board[8] in pos_of_walls: 
-                    return True
-                return False
+    if stone not in pos_of_switches:
+        board = \
+        [
+            (stone[0] - 1, stone[1] - 1), (stone[0] - 1, stone[1]), (stone[0] - 1, stone[1] + 1), 
+            (stone[0], stone[1] - 1), (stone[0], stone[1]), (stone[0], stone[1] + 1), 
+            (stone[0] + 1, stone[1] - 1), (stone[0] + 1, stone[1]), (stone[0] + 1, stone[1] + 1)
+        ]
+        for pattern in all_patterns:
+            new_board = [board[i] for i in pattern]
+            if new_board[1] in pos_of_walls and new_board[5] in pos_of_walls: 
+                return True
+            elif new_board[1] in pos_of_stones and new_board[2] in pos_of_walls and new_board[5] in pos_of_walls: 
+                return True
+            elif new_board[1] in pos_of_stones and new_board[2] in pos_of_walls and new_board[5] in pos_of_stones: 
+                return True
+            elif new_board[1] in pos_of_stones and new_board[2] in pos_of_stones and new_board[5] in pos_of_stones: 
+                return True
+            elif new_board[1] in pos_of_stones and new_board[2] in pos_of_walls and new_board[3] in pos_of_walls and new_board[8] in pos_of_walls: 
+                return True
+    
+    return False
 
 def cost(actions):
     """A cost function"""

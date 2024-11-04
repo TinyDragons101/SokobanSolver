@@ -131,7 +131,7 @@ def load():
     if os.path.exists(os.path.join(OUTPUT_DIR, filename)):
         all_steps = load_search(filename)
     else:
-        all_steps = execute_search(game_state, stone_weight, levels[current_level_index])
+        all_steps = execute_search(CURRENT_DIR, levels[current_level_index])
 
     current_step_index = 0
     current_weight = 0
@@ -441,6 +441,13 @@ while running:
                     current_algorithm_index = (current_algorithm_index + 1) % len(algorithms)
                     steps = all_steps[algorithms[current_algorithm_index]]
                     reset()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT and not playing:
+                back_game_state(previous_states)
+            elif event.key == pygame.K_SPACE:
+                playing = not playing
+            elif event.key == pygame.K_RIGHT and not playing:
+                next_game_state(game_state, previous_states)
         elif event.type == LOAD_COMPLETE_EVENT:
             current_angle = math.pi / 2
             steps = all_steps[algorithms[current_algorithm_index]]
