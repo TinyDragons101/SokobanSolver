@@ -44,6 +44,7 @@ def breadth_first_search(game_state, stone_weight):
                     if action[-1].isupper():
                         stone = (new_pos_of_player[0] + action[0], new_pos_of_player[1] + action[1])
                         if is_failed(stone, new_pos_of_stones, pos_of_switches, pos_of_walls):
+                            explored_set.add(new_state)
                             continue
                     
                     node_cnt += 1
