@@ -15,12 +15,6 @@ def a_star_search(game_state, stone_weight):
     steps = []
 
     begin_state = (begin_player, begin_stones)
-    if is_end_state(begin_stones, pos_of_switches):
-        end_time = time.time()
-        duration = (end_time - begin_time) * 1000
-
-        return True, step_cnt, node_cnt, total_weight, duration, steps       
-
     states = PriorityQueue()
     states.push(begin_state, 0)
     weights = PriorityQueue()
@@ -33,6 +27,16 @@ def a_star_search(game_state, stone_weight):
         node = states.pop()
         node_action = actions.pop()
         node_weight = weights.pop()
+
+        if is_end_state(node[1], pos_of_switches):
+            step_cnt = len(node_action)
+            total_weight = node_weight
+            steps = node_action
+            
+            end_time = time.time()
+            duration = (end_time - begin_time) * 1000
+
+            return True, step_cnt, node_cnt, total_weight, duration, steps
 
         if node not in explored_set:
             explored_set.add(node) 
@@ -49,16 +53,6 @@ def a_star_search(game_state, stone_weight):
                             continue
                     
                     node_cnt += 1
-                    
-                    if is_end_state(new_state[1], pos_of_switches):
-                        step_cnt = len(node_action) + 1
-                        total_weight = node_weight + weight_push
-                        steps = node_action + [action[-1]]
-                        
-                        end_time = time.time()
-                        duration = (end_time - begin_time) * 1000
-
-                        return True, step_cnt, node_cnt, total_weight, duration, steps
                     
                     cost_step_value = cost(node_action + [action[-1]])
                     heuristic_value = heuristic(new_pos_of_stones, pos_of_switches)
