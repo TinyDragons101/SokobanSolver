@@ -17,14 +17,15 @@ SCREEN_HEIGHT = 720
 
 FPS = 30
 
-BACKGROUND_COLOR = (74, 60, 48)
+BACKGROUND_COLOR = (185, 160, 80)
 
 BUTTON_WIDTH = 300
-BUTTON_HEIGHT = 75
+BUTTON_HEIGHT = 65
 BUTTON_COLOR = (71, 38, 17)
+SELECTED_BUTTON_COLOR = (141, 78, 36)
 
 TEXT_SIZE = 54
-TEXT_COLOR = (140, 68, 28)
+TEXT_COLOR = (180, 88, 38)
 
 DARKEN_COLOR = (0, 0, 0, 200)
 
@@ -34,8 +35,15 @@ FRAME_WIDTH = 790
 FRAME_HEIGHT = 610
 BORDER_SIZE = 5
 
+MINI_FRAME_LEFT = 480
+MINI_FRAME_TOP = 385
+MINI_FRAME_WIDTH = 316
+MINI_FRAME_HEIGHT = 244
+MINI_BORDER_SIZE = 2
+
 GAME_COLOR = (20, 18, 20)
 TILE_SIZE = 50
+MINI_TILE_SIZE = 20
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
@@ -52,6 +60,9 @@ class Button:
     def draw(self, surface):
         pygame.draw.rect(surface, self.color, self.rect)
         surface.blit(self.text_surface, self.text_rect)
+
+    def change_color(self, color):
+        self.color = color
         
     def is_selected(self, pos):
         return self.rect.collidepoint(pos)
@@ -64,26 +75,63 @@ class PolygonButton:
     def draw(self, surface):
         self.rect = pygame.draw.polygon(surface, self.color, self.polygon)
         
+    def change_color(self, color):
+        self.color = color
+
     def is_selected(self, pos):
         return self.rect.collidepoint(pos)
 
+def load_level():
+    global game_state
+    global stones
+    global tile_size
+    global fit_wall
+    global fit_ares_back
+    global fit_ares_front
+    global fit_ares_left
+    global fit_ares_right
+    global fit_stone
+    global fit_stone_on_switch
+    global fit_switch
+
+    game_state, stone_weight = get_game_state(levels[current_level_index])
+    pos_of_stones = [tuple(x) for x in np.argwhere((game_state == 3) | (game_state == 5))]
+    stones = {}
+    for index, pos in enumerate(pos_of_stones):
+        stones[pos] = stone_weight[index]
+
+    width = game_state.shape[1] * MINI_TILE_SIZE
+    height = game_state.shape[0] * MINI_TILE_SIZE
+    tile_size = min(int((MINI_FRAME_WIDTH - 8)/ width * MINI_TILE_SIZE), int((MINI_FRAME_HEIGHT - 8)/ height * MINI_TILE_SIZE))
+    fit_wall = pygame.transform.scale(wall, (tile_size, tile_size))
+    fit_ares_back = pygame.transform.scale(ares_back, (tile_size, tile_size))
+    fit_ares_front = pygame.transform.scale(ares_front, (tile_size, tile_size))
+    fit_ares_left = pygame.transform.scale(ares_left, (tile_size, tile_size))
+    fit_ares_right = pygame.transform.scale(ares_right, (tile_size, tile_size))
+    fit_stone = pygame.transform.scale(stone, (tile_size, tile_size))
+    fit_stone_on_switch = pygame.transform.scale(stone_on_switch, (tile_size, tile_size))
+    fit_switch = pygame.transform.scale(switch, (tile_size, tile_size))
+
 def draw_start_screen(screen):
     title = pygame.image.load(os.path.join(IMAGE_DIR, "title.png"))
+    mini_board_frame = pygame.Rect(MINI_FRAME_LEFT, MINI_FRAME_TOP, MINI_FRAME_WIDTH, MINI_FRAME_HEIGHT)
 
     font = pygame.font.Font(None, int((8/9)*TEXT_SIZE))
     font.set_italic(True)
     choose_level_text = font.render("Choose level", True, BUTTON_COLOR)
-    choose_level_rect = choose_level_text.get_rect(center=(640, 475))
+    choose_level_rect = choose_level_text.get_rect(center=(640, 280))
     level_text = font.render(levels[current_level_index], True, TEXT_COLOR)
-    level_rect = level_text.get_rect(center=(640, 540))
+    level_rect = level_text.get_rect(center=(640, 340))
 
     screen.fill(BACKGROUND_COLOR)
     screen.blit(title, (0, 0))
-    start_button.draw(screen)
     screen.blit(choose_level_text, choose_level_rect)
     screen.blit(level_text, level_rect)
     level_decrease_button.draw(screen)
     level_increase_button.draw(screen)
+    pygame.draw.rect(screen, BUTTON_COLOR, mini_board_frame, MINI_BORDER_SIZE, MINI_BORDER_SIZE)
+    draw_game_map(screen, MINI_TILE_SIZE, 12, MINI_FRAME_LEFT, MINI_FRAME_TOP, MINI_FRAME_WIDTH, MINI_FRAME_HEIGHT)
+    start_button.draw(screen)
 
 def draw_loading(screen):
     darken_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -97,7 +145,7 @@ def draw_loading(screen):
     pygame.draw.arc(darken_surface, BUTTON_COLOR, loading_rect, current_angle - math.pi / 3, current_angle, width)
 
     screen.blit(darken_surface, (0, 0))
-    
+
 def load():
     global game_state
     global initial_game_state
@@ -105,6 +153,7 @@ def load():
     global stones
     global pos_of_ares
     global all_steps
+    global all_weights
     global current_step_index
     global current_weight
     global previous_move
@@ -129,9 +178,9 @@ def load():
     pos_of_ares = np.argwhere((game_state == 2) | (game_state == 6))[0]
     filename = "out" + levels[current_level_index][2:]
     if os.path.exists(os.path.join(OUTPUT_DIR, filename)):
-        all_steps = load_search(filename)
+        all_steps, all_weights = load_search(filename)
     else:
-        all_steps = execute_search(CURRENT_DIR, levels[current_level_index])
+        all_steps, all_weights = execute_search(CURRENT_DIR, levels[current_level_index])
 
     current_step_index = 0
     current_weight = 0
@@ -153,8 +202,8 @@ def load():
 
     pygame.event.post(pygame.event.Event(LOAD_COMPLETE_EVENT))
 
-def draw_game_map(screen):
-    font = pygame.font.Font(None, int(tile_size / TILE_SIZE * 30))
+def draw_game_map(screen, default_tile_size=TILE_SIZE, font_size=30, frame_left=FRAME_LEFT, frame_top=FRAME_TOP, frame_width=FRAME_WIDTH, frame_height=FRAME_HEIGHT):
+    font = pygame.font.Font(None, int(tile_size / default_tile_size * font_size))
 
     width = game_state.shape[1] * tile_size
     height = game_state.shape[0] * tile_size
@@ -195,13 +244,13 @@ def draw_game_map(screen):
                 weight_rect = weight_text.get_rect(center=center)
                 game_surface.blit(weight_text, weight_rect)
 
-    screen.blit(game_surface, (FRAME_LEFT + (FRAME_WIDTH - width) // 2, (FRAME_TOP + (FRAME_HEIGHT - height) // 2)))
+    screen.blit(game_surface, (frame_left + (frame_width - width) // 2, (frame_top + (frame_height - height) // 2)))
 
 def draw_game_screen(screen):
     board_frame = pygame.Rect(FRAME_LEFT, FRAME_TOP, FRAME_WIDTH, FRAME_HEIGHT)
     font = pygame.font.Font(None, TEXT_SIZE)
-    step_text = font.render("Step: " + str(current_step_index), True, BUTTON_COLOR)
-    weight_text = font.render("Weight: " + str(current_weight), True, BUTTON_COLOR)
+    step_text = font.render("Step: " + str(current_step_index) + "/" + str(len(steps)), True, BUTTON_COLOR)
+    weight_text = font.render("Weight: " + str(current_weight) + "/" + str(all_weights[algorithms[current_algorithm_index]]), True, BUTTON_COLOR)
     algorithm_text = font.render("Algorithm: ", True, BUTTON_COLOR)
     algortihm_chosen_text = font.render(algorithms[current_algorithm_index], True, BUTTON_COLOR)
     algortihm_chosen_rect = algortihm_chosen_text.get_rect(center=(190, 280))
@@ -223,21 +272,52 @@ def draw_game_screen(screen):
     reset_button.draw(screen)
 
     pygame.draw.rect(screen, WHITE, (25, 25, 30, 55))
-    pygame.draw.polygon(screen, BUTTON_COLOR, [(26, 26), (26, 80), (50, 90), (50, 16)])
+    if return_button_selected:
+        pygame.draw.polygon(screen, SELECTED_BUTTON_COLOR, [(26, 26), (26, 80), (50, 90), (50, 16)])
+    else:  
+        pygame.draw.polygon(screen, BUTTON_COLOR, [(26, 26), (26, 80), (50, 90), (50, 16)])
     pygame.draw.circle(screen, WHITE, (45, 53), 2)
 
-    pygame.draw.polygon(screen, BUTTON_COLOR, [(820, 40), (820, 80), (780, 60)])
-    pygame.draw.rect(screen, BUTTON_COLOR, (825, 40, 10, 40))
-    if playing:
-        pygame.draw.rect(screen, BUTTON_COLOR, (860, 30, 15, 60))
-        pygame.draw.rect(screen, BUTTON_COLOR, (885, 30, 15, 60))
+    if back_button_selected:
+        pygame.draw.polygon(screen, SELECTED_BUTTON_COLOR, [(820, 40), (820, 80), (780, 60)])
+        pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (825, 40, 10, 40))
     else:
-        pygame.draw.polygon(screen, BUTTON_COLOR, [(860, 30), (860, 90), (900, 60)])
-    pygame.draw.rect(screen, BUTTON_COLOR, (925, 40, 10, 40))
-    pygame.draw.polygon(screen, BUTTON_COLOR, [(940, 40), (940, 80), (980, 60)])
+        pygame.draw.polygon(screen, BUTTON_COLOR, [(820, 40), (820, 80), (780, 60)])
+        pygame.draw.rect(screen, BUTTON_COLOR, (825, 40, 10, 40))
+    if playing:
+        if play_pause_button_selected:
+            pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (860, 30, 15, 60))
+            pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (885, 30, 15, 60))
+        else:
+            pygame.draw.rect(screen, BUTTON_COLOR, (860, 30, 15, 60))
+            pygame.draw.rect(screen, BUTTON_COLOR, (885, 30, 15, 60))
+    else:
+        if play_pause_button_selected:
+            pygame.draw.polygon(screen, SELECTED_BUTTON_COLOR, [(860, 30), (860, 90), (900, 60)])
+        else:
+            pygame.draw.polygon(screen, BUTTON_COLOR, [(860, 30), (860, 90), (900, 60)])
+
+    if next_button_selected:
+        pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (925, 40, 10, 40))
+        pygame.draw.polygon(screen, SELECTED_BUTTON_COLOR, [(940, 40), (940, 80), (980, 60)])
+    else:
+        pygame.draw.rect(screen, BUTTON_COLOR, (925, 40, 10, 40))
+        pygame.draw.polygon(screen, BUTTON_COLOR, [(940, 40), (940, 80), (980, 60)])
+
     pygame.draw.rect(screen, BUTTON_COLOR, board_frame, BORDER_SIZE, BORDER_SIZE)
-    pygame.draw.arc(screen, TEXT_COLOR, (1220, 40, 40, 40), - math.pi, math.pi / 2, 10)
-    pygame.draw.polygon(screen, TEXT_COLOR, [(1240, 35), (1240, 55), (1225, 45)])
+
+    if reset_button_selected:
+        pygame.draw.polygon(screen, SELECTED_BUTTON_COLOR, [(1240, 30), (1240, 55), (1215, 42.5)])
+        pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (1240, 35, 25, 15))
+        pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (1250, 50, 15, 35))
+        pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (1230, 70, 20, 15))
+        pygame.draw.rect(screen, SELECTED_BUTTON_COLOR, (1215, 55, 15, 30))
+    else:
+        pygame.draw.polygon(screen, BUTTON_COLOR, [(1240, 30), (1240, 55), (1215, 42.5)])
+        pygame.draw.rect(screen, BUTTON_COLOR, (1240, 35, 25, 15))
+        pygame.draw.rect(screen, BUTTON_COLOR, (1250, 50, 15, 35))
+        pygame.draw.rect(screen, BUTTON_COLOR, (1230, 70, 20, 15))
+        pygame.draw.rect(screen, BUTTON_COLOR, (1215, 55, 15, 30))
 
     draw_game_map(screen)
 
@@ -341,13 +421,13 @@ pygame.display.set_caption("Sokoban")
 
 running = True
 
-start_button = Button((SCREEN_WIDTH - BUTTON_WIDTH) // 2, 350, BUTTON_WIDTH, BUTTON_HEIGHT, "START")
+start_button = Button((SCREEN_WIDTH - BUTTON_WIDTH) // 2, 640, BUTTON_WIDTH, BUTTON_HEIGHT, "START")
 
 current_level_index = 0
 levels = os.listdir(TEST_DIR)
 
-level_decrease_button = PolygonButton([(500, 510), (500, 570), (450, 540)])
-level_increase_button = PolygonButton([(780, 510), (780, 570), (830, 540)])
+level_decrease_button = PolygonButton([(470, 479), (470, 539), (420, 509)])
+level_increase_button = PolygonButton([(810, 479), (810, 539), (860, 509)])
 
 current_angle = math.pi / 2
 
@@ -359,15 +439,10 @@ stone_weight = None
 stones = None
 pos_of_ares = None
 all_steps = None
+all_weights = None
 current_algorithm_index = 0
 algorithms = ['BFS', 'DFS', 'UCS', 'A*']
 steps = None
-
-loading = False
-
-starting = True
-
-return_button = PolygonButton([(20, 20), (20, 80), (60, 80), (60, 20)])
 
 wall = pygame.image.load(os.path.join(IMAGE_DIR, "wall.png"))
 ares_back = pygame.image.load(os.path.join(IMAGE_DIR, "ares_back.png"))
@@ -388,6 +463,14 @@ fit_stone = None
 fit_stone_on_switch = None
 fit_switch = None
 
+load_level()
+
+loading = False
+
+starting = True
+
+return_button = PolygonButton([(20, 20), (20, 80), (60, 80), (60, 20)])
+
 previous_move = None
 
 back_button = PolygonButton([(780, 40), (835, 40), (835, 80), (780, 80)], BACKGROUND_COLOR)
@@ -395,7 +478,13 @@ algorithm_left_button = PolygonButton([(90, 250), (90, 310), (50, 280)])
 algorithm_right_button = PolygonButton([(290, 250), (290, 310), (330, 280)])
 play_pause_button = PolygonButton([(860, 30), (900, 30), (900, 90), (860, 90)], BACKGROUND_COLOR)
 next_button = PolygonButton([(925, 40), (980, 40), (980, 80), (925, 80)], BACKGROUND_COLOR)
-reset_button = PolygonButton([(1210, 30), (1270, 30), (1270, 90), (1210, 90)])
+reset_button = PolygonButton([(1210, 30), (1270, 30), (1270, 90), (1210, 90)], BACKGROUND_COLOR)
+
+return_button_selected = False
+back_button_selected = False
+play_pause_button_selected = False
+next_button_selected = False
+reset_button_selected = False
 
 previous_states = None
 current_step_index = None
@@ -404,22 +493,98 @@ playing = False
 
 current_weight = None
 
+cnt = 0
+
 gaming = False
 
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if starting and not loading:
-                if start_button.is_selected(event.pos):
-                    threading.Thread(target=load).start()
-                    loading = True
-                elif level_decrease_button.is_selected(event.pos):
-                    current_level_index = (current_level_index - 1 + len(levels)) % len(levels)
-                elif level_increase_button.is_selected(event.pos):
-                    current_level_index = (current_level_index + 1) % len(levels)
-            elif gaming:
+    if starting:
+        draw_start_screen(screen)
+
+        if loading:
+            draw_loading(screen)
+            current_angle = current_angle - math.pi / 6
+            if (current_angle <= 0):
+                current_angle += 2 * math.pi
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEMOTION:
+                if not loading:
+                    if start_button.is_selected(event.pos):
+                        start_button.change_color(SELECTED_BUTTON_COLOR)
+                    else:
+                        start_button.change_color(BUTTON_COLOR)
+                    if level_decrease_button.is_selected(event.pos):
+                        level_decrease_button.change_color(SELECTED_BUTTON_COLOR)
+                    else:
+                        level_decrease_button.change_color(BUTTON_COLOR)
+                    if level_increase_button.is_selected(event.pos):
+                        level_increase_button.change_color(SELECTED_BUTTON_COLOR)
+                    else:
+                        level_increase_button.change_color(BUTTON_COLOR)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if not loading:
+                    if start_button.is_selected(event.pos):
+                        threading.Thread(target=load).start()
+                        loading = True
+                    elif level_decrease_button.is_selected(event.pos):
+                        current_level_index = (current_level_index - 1 + len(levels)) % len(levels)
+                        load_level()
+                    elif level_increase_button.is_selected(event.pos):
+                        current_level_index = (current_level_index + 1) % len(levels)
+                        load_level()
+            elif event.type == LOAD_COMPLETE_EVENT:
+                current_angle = math.pi / 2
+                steps = all_steps[algorithms[current_algorithm_index]]
+                if starting and loading:
+                    loading = False
+                    starting = False
+                    gaming = True
+
+    elif gaming:
+        if playing:
+            if cnt == 0:
+                next_game_state(game_state, previous_states)
+            cnt = (cnt + 1) % 6
+        draw_game_screen(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEMOTION:
+                if back_button.is_selected(event.pos) and not playing:
+                    back_button_selected = True
+                else:
+                    back_button_selected = False
+                if play_pause_button.is_selected(event.pos):
+                    play_pause_button_selected = True
+                else:
+                    play_pause_button_selected = False
+                if next_button.is_selected(event.pos) and not playing:
+                    next_button_selected = True
+                else:
+                    next_button_selected = False
+                if reset_button.is_selected(event.pos):
+                    reset_button_selected = True
+                else:
+                    reset_button_selected = False
+                if return_button.is_selected(event.pos):
+                    return_button.change_color(SELECTED_BUTTON_COLOR)
+                    return_button_selected = True
+                else:
+                    return_button.change_color(BUTTON_COLOR)
+                    return_button_selected = False
+                if algorithm_left_button.is_selected(event.pos):
+                    algorithm_left_button.change_color(SELECTED_BUTTON_COLOR)
+                else:
+                    algorithm_left_button.change_color(BUTTON_COLOR)
+                if algorithm_right_button.is_selected(event.pos):
+                    algorithm_right_button.change_color(SELECTED_BUTTON_COLOR)
+                else:
+                    algorithm_right_button.change_color(BUTTON_COLOR)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.is_selected(event.pos) and not playing:
                     back_game_state(previous_states)
                 elif play_pause_button.is_selected(event.pos):
@@ -433,6 +598,7 @@ while running:
                         playing = False
                     gaming = False
                     starting = True
+                    load_level()
                 elif algorithm_left_button.is_selected(event.pos):
                     current_algorithm_index = (current_algorithm_index - 1 + len(algorithms)) % len(algorithms)
                     steps = all_steps[algorithms[current_algorithm_index]]
@@ -441,35 +607,13 @@ while running:
                     current_algorithm_index = (current_algorithm_index + 1) % len(algorithms)
                     steps = all_steps[algorithms[current_algorithm_index]]
                     reset()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT and not playing:
-                back_game_state(previous_states)
-            elif event.key == pygame.K_SPACE:
-                playing = not playing
-            elif event.key == pygame.K_RIGHT and not playing:
-                next_game_state(game_state, previous_states)
-        elif event.type == LOAD_COMPLETE_EVENT:
-            current_angle = math.pi / 2
-            steps = all_steps[algorithms[current_algorithm_index]]
-            if starting and loading:
-                loading = False
-                starting = False
-                gaming = True
-
-    if starting:
-        draw_start_screen(screen)
-
-        if loading:
-            draw_loading(screen)
-            current_angle = current_angle - math.pi / 6
-            if (current_angle <= 0):
-                current_angle += 2 * math.pi
-
-    elif gaming:
-        if playing:
-            pygame.time.delay(200)
-            next_game_state(game_state, previous_states)
-        draw_game_screen(screen)
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT and not playing:
+                    back_game_state(previous_states)
+                elif event.key == pygame.K_SPACE:
+                    playing = not playing
+                elif event.key == pygame.K_RIGHT and not playing:
+                    next_game_state(game_state, previous_states)
 
     pygame.display.flip()
 

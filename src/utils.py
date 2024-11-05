@@ -3,6 +3,7 @@ from optparse import OptionParser
 import numpy as np
 import subprocess
 import tracemalloc
+import re
 
 from src.algorithms.bfs import *
 from src.algorithms.dfs import *
@@ -122,12 +123,15 @@ def execute_search(dir, filename):
     return load_search(output_filename)
 
 def load_search(filename):
+    weights = dict()
     steps = dict()
     with open(os.path.join(OUTPUT_DIR, filename), "r") as f:
         for _ in range(4):
             algorithm = f.readline()[:-1]
-            f.readline()
+            info = f.readline()
+            match = re.search(r"Weight:\s(\d+)", info)
+            weights[algorithm] = match.group(1)
             step = f.readline()[:-1]
             steps[algorithm] = list(step)
 
-    return steps
+    return steps, weights
