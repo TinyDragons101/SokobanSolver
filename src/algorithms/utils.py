@@ -73,11 +73,13 @@ def update_state(action, pos_of_player, pos_of_stones):
     pos_of_stones = [list(x) for x in pos_of_stones]
     
     if action[-1].isupper():
-        pos_of_stone_index = [i for i in range(len(pos_of_stones)) if pos_of_stones[i][0:2] == new_pos_of_player]
-        pos_of_stone_index = pos_of_stone_index[0]
-        pos_of_stones[pos_of_stone_index][0] = x_player + 2 * action[0]
-        pos_of_stones[pos_of_stone_index][1] = y_player + 2 * action[1]
-        weight_push = pos_of_stones[pos_of_stone_index][2]
+        for i in range(len(pos_of_stones)):
+            if pos_of_stones[i][0:2] == new_pos_of_player:
+                pos_of_stones[i][0] = x_player + 2 * action[0]
+                pos_of_stones[i][1] = y_player + 2 * action[1]
+                weight_push = pos_of_stones[i][2]
+                break
+
 
     new_pos_of_player = tuple(new_pos_of_player) 
     new_pos_of_stones = tuple(tuple(x) for x in pos_of_stones)

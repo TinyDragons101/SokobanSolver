@@ -1,12 +1,12 @@
 BFS
-Steps: 68, Weight: 618, Node: 603646, Time (ms): 11650.57, Memory (MB): 275.36
+Steps: 68, Weight: 618, Node: 603646, Time (ms): 11588.22, Memory (MB): 275.36
 ddddrruruuLLulluurrDDlUdDDDldRRRuruulLulDDDldRRluuurrrddlDRRRurruLLL
 DFS
-Steps: 624, Weight: 1831, Node: 1569103, Time (ms): 37360.51, Memory (MB): 689.22
+Steps: 624, Weight: 1831, Node: 1569103, Time (ms): 37220.23, Memory (MB): 689.22
 ldrddldrrrrrrrululluLLrrddldllluruUluuurrDDuulldddrddldrrrrrrrulullulLrrddldrrrruruLLLullluuulldddRluRldrddldrrrrrrrululullLrrDrrddlllllluruUluuurrdDuulldddrddldrrrrrrrulullulLrrdrrddllUldrrrrululullluuulldddRluRldrddldrrrrrrrululullLrrDrrddlllllluruUluuurrdDuulldddrddldrrrrrrrulullulLuuullddRldRlurUlddrddldrrrrrrrulullulLrrdrrddlllllluruUluurDlurrDlDDDldRluruuRlddldrRlluruulurrdRllddldrrRRRlUldrrRurrullluLLLrrDrrddlllllluruUluRldrddldrrrrUldllluruulururDlldrddldrrrrrrurrulllulDrrddlllllluruuRlddldrrrrrrurrulllluLLulDlurrdrrdrrddllUldlllurUUluurDDDDldRluruulurrdrrDrrddlllLrrrrurrullllulllddldRRlluruulurrdrrdrrddllUlD
 UCS
-Steps: 80, Weight: 471, Node: 998125, Time (ms): 30637.22, Memory (MB): 444.80
+Steps: 80, Weight: 471, Node: 998125, Time (ms): 30476.39, Memory (MB): 444.80
 ddddrruruuLLulDDDldRRluuurrrddlDlluuuuluurrDDlddddrruruulLulUdDDDldRRRRRRurruLLL
 A*
-Steps: 80, Weight: 471, Node: 894064, Time (ms): 30565.44, Memory (MB): 402.60
+Steps: 80, Weight: 471, Node: 894064, Time (ms): 30535.49, Memory (MB): 402.60
 ddddrruruuLLulDDDldRRluuurrrddlDlluuuuluurrDDlddddrruruulLulUdDDDldRRRRRRurruLLL
