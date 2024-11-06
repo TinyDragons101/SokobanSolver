@@ -2,8 +2,10 @@ import time
 
 from src.algorithms.utils import *
 
-def a_star_search(game_state, stone_weight):
+def uniform_cost_search(game_state, stone_weight):
     begin_time = time.time()
+    width = game_state.shape[1]
+    height = game_state.shape[0]
     begin_player = get_pos_of_player(game_state)
     begin_stones = get_pos_of_stones(game_state, stone_weight)
     pos_of_walls = get_pos_of_walls(game_state)
@@ -49,15 +51,14 @@ def a_star_search(game_state, stone_weight):
                 
                     if action[-1].isupper():
                         stone = (new_pos_of_player[0] + action[0], new_pos_of_player[1] + action[1])
-                        if is_failed(stone, new_pos_of_stones, pos_of_switches, pos_of_walls):
+                        if is_failed(action[-1], stone, new_pos_of_stones, pos_of_switches, pos_of_walls, width, height):
                             explored_set.add(new_state)
                             continue
                     
                     node_cnt += 1
                     
                     cost_step_value = cost(node_action + [action[-1]])
-                    heuristic_value = heuristic(new_pos_of_stones, pos_of_switches)
-                    new_total_cost = heuristic_value + cost_step_value + node_weight + weight_push
+                    new_total_cost = cost_step_value + node_weight + weight_push
 
                     states.push(new_state, new_total_cost)
                     weights.push(node_weight + weight_push, new_total_cost)

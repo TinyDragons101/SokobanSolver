@@ -7,7 +7,7 @@ from src.algorithms.ucs import *
 from src.algorithms.astar import *
 
 if __name__ == '__main__':
-    layout, stone_weight, method = read_command(sys.argv[1:]).values()
+    method, stone_weight, layout = read_command(sys.argv[1:]).values()
     game_state = transfer_to_game_state(layout)
 
     if method == 'bfs':

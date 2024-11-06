@@ -1,9 +1,12 @@
+from collections import deque
 import time
 
 from src.algorithms.utils import *
 
-def uniform_cost_search(game_state, stone_weight):
+def breadth_first_search(game_state, stone_weight):
     begin_time = time.time()
+    width = game_state.shape[1]
+    height = game_state.shape[0]
     begin_player = get_pos_of_player(game_state)
     begin_stones = get_pos_of_stones(game_state, stone_weight)
     pos_of_walls = get_pos_of_walls(game_state)
@@ -15,18 +18,15 @@ def uniform_cost_search(game_state, stone_weight):
     steps = []
 
     begin_state = (begin_player, begin_stones)
-    states = PriorityQueue()
-    states.push(begin_state, 0)
-    weights = PriorityQueue()
-    weights.push(0, 0)
-    actions = PriorityQueue()
-    actions.push([], 0)
-    explored_set = set()
+    states = deque([begin_state])
+    weights = deque([0])
+    actions = deque([[]])
+    explored_set = set([])
 
     while states:
-        node = states.pop()
-        node_action = actions.pop()
-        node_weight = weights.pop()
+        node = states.popleft()
+        node_weight = weights.popleft()
+        node_action = actions.popleft()
 
         if is_end_state(node[1], pos_of_switches):
             step_cnt = len(node_action)
@@ -49,18 +49,15 @@ def uniform_cost_search(game_state, stone_weight):
                 
                     if action[-1].isupper():
                         stone = (new_pos_of_player[0] + action[0], new_pos_of_player[1] + action[1])
-                        if is_failed(stone, new_pos_of_stones, pos_of_switches, pos_of_walls):
+                        if is_failed(action[-1], stone, new_pos_of_stones, pos_of_switches, pos_of_walls, width, height):
                             explored_set.add(new_state)
                             continue
                     
                     node_cnt += 1
                     
-                    cost_step_value = cost(node_action + [action[-1]])
-                    new_total_cost = cost_step_value + node_weight + weight_push
-
-                    states.push(new_state, new_total_cost)
-                    weights.push(node_weight + weight_push, new_total_cost)
-                    actions.push(node_action + [action[-1]], new_total_cost)
+                    states.append(new_state)
+                    weights.append(node_weight + weight_push)
+                    actions.append(node_action + [action[-1]])
 
     end_time = time.time()
     duration = (end_time - begin_time) * 1000
