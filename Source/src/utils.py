@@ -89,9 +89,9 @@ def transfer_to_game_state(layout):
 
     return np.array(layout)
 
-def get_game_state(filename):
+def get_game_state(filepath):
     """Get the initial game state from input file"""
-    with open(filename, "r") as f:
+    with open(filepath, "r") as f:
         weight_line = f.readline().strip()
         stone_weight = weight_line.split(' ')
         stone_weight = tuple(int(x) for x in stone_weight)
@@ -121,10 +121,10 @@ def write_search_output(game_state, stone_weight, method, algorithm, f):
         f.write(step)
     f.write('\n')
 
-def load_search(filename):
+def load_search(filepath):
     weights = dict()
     all_steps = dict()
-    with open(filename, "r") as f:
+    with open(filepath, "r") as f:
         for _ in range(4):
             algorithm = f.readline()[:-1]
             statistics = f.readline()
@@ -135,10 +135,10 @@ def load_search(filename):
 
     return all_steps, weights
 
-def execute_search(filename):
-    output_filename = "out" + filename[2:]
-    output_filename = os.path.join(WORKING_DIR, output_filename)
-    if not os.path.exists(output_filename):
-        subprocess.run(["python", os.path.join(WORKING_DIR, "script.py"), filename])
+def execute_search(input_filename):
+    output_filename = "out" + input_filename[2:]
+    output_filepath = os.path.join(WORKING_DIR, output_filename)
+    if not os.path.exists(output_filepath):
+        subprocess.run(["python", os.path.join(WORKING_DIR, "script.py"), input_filename, output_filename])
     
-    return load_search(output_filename)
+    return load_search(output_filepath)
