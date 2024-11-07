@@ -1,5 +1,6 @@
 from collections import deque
 import time
+import gc
 
 from src.algorithms.utils import *
 
@@ -21,7 +22,7 @@ def breadth_first_search(game_state, stone_weight):
     states = deque([begin_state])
     weights = deque([0])
     actions = deque([[]])
-    explored_set = set([])
+    explored_set = set()
 
     while states:
         node = states.popleft()

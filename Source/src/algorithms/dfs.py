@@ -21,7 +21,7 @@ def depth_first_search(game_state, stone_weight):
     states = deque([begin_state])
     weights = deque([0])
     actions = deque([[]])
-    explored_set = set([])
+    explored_set = set()
 
     while states:
         node = states.pop()

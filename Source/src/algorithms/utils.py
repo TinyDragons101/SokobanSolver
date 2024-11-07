@@ -52,7 +52,7 @@ def is_legal_action(action, pos_of_player, pos_of_stones, pos_of_walls):
 
 def legal_actions(pos_of_player, pos_of_stones, pos_of_walls):
     """Return all legal actions for the agent in the current game state"""
-    all_actions = [[-1, 0, 'u', 'U'], [0, 1, 'r', 'R'], [1, 0, 'd', 'D'], [0, -1, 'l', 'L']]
+    all_actions = [[0, -1, 'l', 'L'], [0, 1, 'r', 'R'],[-1, 0, 'u', 'U'], [1, 0, 'd', 'D']]
     x_player, y_player = pos_of_player
     legal_actions = []
     for action in all_actions:
@@ -136,7 +136,7 @@ def is_failed(direction, stone, pos_of_stones, pos_of_switches, pos_of_walls, wi
             if stone[1] == width - 1:
                 no_switch = True
                 for switch in pos_of_switches:
-                    if switch[0] == width - 1 and switch not in pos_of_stones:
+                    if switch[1] == width - 1 and switch not in pos_of_stones:
                         no_switch = False
                         break
                 if no_switch:
@@ -178,7 +178,7 @@ def is_failed(direction, stone, pos_of_stones, pos_of_switches, pos_of_walls, wi
             if stone[1] == 1:
                 no_switch = True
                 for switch in pos_of_switches:
-                    if switch[0] == 1 and switch not in pos_of_stones:
+                    if switch[1] == 1 and switch not in pos_of_stones:
                         no_switch = False
                         break
                 if no_switch:
